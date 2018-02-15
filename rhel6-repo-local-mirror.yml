@@ -9,8 +9,9 @@
 
   tasks:
   - name: Repo logs directory
-    file: "{{ logdir }}"
-    state: directory
+    file:
+      path: "{{ logdir }}"
+      state: directory
   - name: Repo data directory
     file:
       path: "{{ repodir }}/{{ repoid }}"
