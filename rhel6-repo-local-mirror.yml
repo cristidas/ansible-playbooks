@@ -1,0 +1,20 @@
+---
+- hosts: repohost1
+
+  vars:
+    repoid: epel
+    repodir: /var/www/html/
+  tasks:
+  - name: Repo data directory
+    file:
+      path: "{{ repodir }}/{{ repoid }}"
+      state: directory
+      owner: apache
+      group: wheel
+      mode: 0755
+  - name: Sync yum repos to a local directory
+    shell: reposync -r {{ repoid }} -p {{ repodir }}
+  - name: Create the rpm metadata
+    shell: createrepo {{ repodir }}/{{ repoid }}
+
+
