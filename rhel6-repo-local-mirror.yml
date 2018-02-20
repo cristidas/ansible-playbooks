@@ -2,7 +2,7 @@
 - hosts: repohost1
 
   vars:
-    repoid: epel
+    repoid: ['epel', 'rhel-6-server-rpms', 'rhel-6-server-optional-rpms', 'rhel-6-sever-extras-rpms']
     repodir: /var/www/html
     logdir: /var/log/repo
     logdate: "{{ lookup('pipe','date +%d%m%Y_%H%M%S') }}"
@@ -14,23 +14,35 @@
       state: directory
   - name: Repo data directory
     file:
-      path: "{{ repodir }}/{{ repoid }}"
+      path: "{{ repodir }}/{{ item }}"
       state: directory
       owner: apache
       group: wheel
       mode: 0755
+    with_items:
+      - "{{ repoid }}"
 
   - name: Log repo state before the sync
-    shell: "ls -ltr {{ repodir }}/{{ repoid }}/Packages > {{ logdir }}/{{ repoid }}.{{ logdate }}.pre_sync.log 2>&1"
+    shell: "ls -ltr {{ repodir }}/{{ item }}/Packages > {{ logdir }}/{{ item }}.{{ logdate }}.pre_sync.log 2>&1"
+    with_items:
+      - "{{ repoid }}"
 
   - name: Sync yum repos to a local directory
-    shell: reposync -r {{ repoid }} -p {{ repodir }}
+    shell: reposync -r {{ item }} -p {{ repodir }} >> {{ logdir }}/{{ item }}.{{ logdate }}.sync.log 2>&1"
+    with_items:
+      - "{{ repoid }}
   - name: Create the rpm metadata
-    shell: createrepo {{ repodir }}/{{ repoid }}
+    shell: createrepo {{ repodir }}/{{ item }}
+    with_items:
+      - "{{ repoid }}
 
   - name: List of new packages downloaded
-    shell: "cat {{ logdir }}/{{ repoid }}.{{ logdate }}.sync.log | grep Downloading | /bin/awk -F'/' '{print $2}' > {{ logdir }}/{{ repoid }}.{{ logdate }}.diff.log 2>&1"
+    shell: "cat {{ logdir }}/{{ item }}.{{ logdate }}.sync.log | grep Downloading | /bin/awk -F'/' '{print $2}' > {{ logdir }}/{{ item }}.{{ logdate }}.diff.log 2>&1"
+    with_items:
+      - "{{ repoid }}"
   - name: Log repo state after the sync
-    shell: "ls -ltr {{ repodir }}/{{ repoid }}/Packages > {{ logdir }}/{{ repoid }}.{{ logdate }}.post_sync.log 2>&1"
+    shell: "ls -ltr {{ repodir }}/{{ item }}/Packages > {{ logdir }}/{{ item }}.{{ logdate }}.post_sync.log 2>&1"
+    with_items:
+      - "{{ repoid }}"
 
 
