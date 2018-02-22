@@ -1,0 +1,35 @@
+---
+- hosts: localmirror
+
+  vars:
+    repoid: ['epel', 'rhel-6-server-rpms', 'rhel-6-server-optional-rpms', 'rhel-6-sever-extras-rpms']
+    repodir: /var/www/html
+    logdir: /var/log/repo
+    logdate: "{{ lookup('pipe', date +%d%m%Y_%H%M%S') }}" 
+
+  tasks:
+  - name: Directory to store the repo
+    file:
+      path: "{{ repodir }}/{{ item }}"
+      state: directory
+    with_items:
+      - "{{ repoid }}"
+  - name: Sync local repo with remote
+    synchronize:
+      src: "{{ repodir }}/{{ item }}
+      dest: "{{ repodir }}/"
+      archive: yes
+      compress: yes
+      recursive: yes
+      delete: yes
+      rsync_opts:
+      - "--no-motd"
+      - "--log-file={{ logdir }}/rsync.{{ item }}.{{ logdate }}.log"
+      - "--exclude=repodata"
+    with_items:
+      - "{{ repoid }}"
+  - name: Create local repo
+    shell: createrepo -v {{ repodir }}/{{ item }} > {{ logdir }}/create-repo.{{ item }}.{{ logdate }}.log 2>&1
+    with_items:
+      - "{{ repoid }}"
+     
